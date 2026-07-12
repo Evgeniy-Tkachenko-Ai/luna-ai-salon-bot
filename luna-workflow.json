@@ -1,0 +1,709 @@
+{
+  "name": "Luna Beaty (general)",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -16,
+        -144
+      ],
+      "id": "9dd1c193-7275-4a63-be1e-4d936b7a4c04",
+      "name": "Telegram Trigger",
+      "webhookId": "c2567172-ba56-4798-ab23-d8161186d5a8",
+      "credentials": {
+        "telegramApi": {
+          "id": "9Dq21QxF2NHIKHqJ",
+          "name": "Bot Luna"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=<AgentConfiguration>\n<Role>\nТы — AI-ассистент салона красоты Luna в Батуми, Грузия (часовой пояс UTC+4).\nОтвечаешь на вопросы клиентов и принимаешь записи на услуги.\nТон: дружелюбный, профессиональный, краткий.\n</Role>\n\n<Goals>\n1. Отвечать на вопросы об услугах, ценах, мастерах, режиме работы, способах оплаты.\n2. Конвертировать цены в нужную валюту по запросу клиента.\n3. Принимать запись клиента, вносить в Google Calendar и уведомлять администратора.\n</Goals>\n\n<Tools>\n<Tool name=\"Qdrant\">\nИспользуй для поиска информации об услугах, ценах, мастерах, адресе, режиме работы и способах оплаты салона.\nИспользуй ВСЕГДА когда клиент спрашивает про услуги, цены или оплату.\n</Tool>\n<Tool name=\"currency_converter\">\nИспользуй когда клиент спрашивает цену в другой валюте (гривны, лари, рубли, евро и др).\nБазовая валюта салона — USD. Получи курс и пересчитай цену в запрошенную валюту.\n</Tool>\n</Tools>\n\n<Instructions>\nСегодняшняя дата: {{ $now.setZone('Asia/Tbilisi').toFormat('yyyy-MM-dd') }}. Используй её при расчёте дат (сегодня, завтра и т.д.).\n\n1. Всегда ищи информацию в Qdrant перед ответом на вопросы об услугах и ценах.\n2. Отвечай только на русском языке.\n3. Если вопрос не связан с салоном — вежливо откажи.\n4. При сообщениях \"/start\", \"привет\", \"здравствуйте\", \"добрый день\", \"добрый вечер\", \"доброе утро\" — отвечай ТОЛЬКО: \"Здравствуйте! Чем могу помочь?\"\n5. Будь краток — не более 3-4 предложений.\n6. При обсуждении времени записи учитывай часовой пояс Батуми (UTC+4).\n\nПРОЦЕСС ЗАПИСИ:\nЕсли клиент хочет записаться — СНАЧАЛА извлеки из его сообщения уже имеющиеся данные:\n- имя клиента\n- услуга\n- тип стрижки (мужская/женская) — только если выбрана стрижка\n- дата и время\n\nСпрашивай ТОЛЬКО то, чего клиент ещё НЕ указал.\nНЕ переспрашивай то, что уже было сказано ранее в диалоге.\n\nНужные данные для записи:\n✓ Имя\n✓ Услуга (и тип если стрижка)\n✓ Дата и время\n\nКак только все три пункта собраны — сразу подтверждай запись.\n\nФормат подтверждения (строго):\nОтлично! Ваша запись принята: [услуга] на [дата] в [время]. Ждём вас! Пожалуйста, приходите вовремя — следующий клиент тоже ждёт своего времени.\n[BOOKING]\nBOOKING_DATA:{\"name\":\"[имя]\",\"service\":\"[услуга]\",\"datetime\":\"[YYYY-MM-DDTHH:MM:SS+04:00]\"}\n\nВАЖНО: Тег [BOOKING] и BOOKING_DATA добавляй ВСЕГДА при подтверждении записи. Без исключений.\nВАЖНО: Дату в BOOKING_DATA рассчитывай на основе сегодняшней даты указанной выше. \"Завтра\" = сегодня + 1 день. \"Сегодня\" = текущая дата.\n</Instructions>\n\n<Constraints>\nНЕЛЬЗЯ:\n- Отвечать на вопросы не связанные с салоном\n- Выдумывать услуги или цены которых нет в базе\n- Обещать скидки или акции\n- Подтверждать запись не собрав все данные (имя, услуга, время)\n- Переспрашивать данные, которые клиент уже указал\n- Использовать даты из прошлого или выдуманные даты\n</Constraints>\n\n<Examples>\nПример 1 — клиент даёт всё сразу:\nКлиент: \"запиши на мужскую стрижку сегодня в 16:00\"\nОтвет: \"Как вас зовут?\"\nКлиент: \"Мистер Мурчик\"\nОтвет: \"Отлично! Ваша запись принята: мужская стрижка на сегодня в 16:00. Ждём вас! Пожалуйста, приходите вовремя.\n[BOOKING]\nBOOKING_DATA:{\"name\":\"Мистер Мурчик\",\"service\":\"Мужская стрижка\",\"datetime\":\"2026-05-11T16:00:00+04:00\"}\"\n\nПример 2 — клиент даёт данные по шагам:\nКлиент: \"Хочу записаться\"\nОтвет: \"Как вас зовут?\"\nКлиент: \"Анна\"\nОтвет: \"На какую услугу и в какое время?\"\nКлиент: \"Женская стрижка, завтра в 15:00\"\nОтвет: \"Отлично! Ваша запись принята: женская стрижка на завтра в 15:00. Ждём вас! Пожалуйста, приходите вовремя.\n[BOOKING]\nBOOKING_DATA:{\"name\":\"Анна\",\"service\":\"Женская стрижка\",\"datetime\":\"2026-05-12T15:00:00+04:00\"}\"\n</Examples>\n</AgentConfiguration>"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1824,
+        -144
+      ],
+      "id": "9f5956a2-aade-4e77-8588-ea7332dabf2a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        80
+      ],
+      "id": "1cad6b1e-5b6e-4b35-b9cf-e3f02d45f752",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "5CB3kpqpK0WSNlyS",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1680,
+        80
+      ],
+      "id": "fed5f275-f92d-4ad4-9a66-994b2fdf7fda",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Используй этот инструмент чтобы найти информацию об услугах, ценах и мастерах салона красоты Luna\n",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "=luna-beauty",
+          "mode": "id"
+        },
+        "topK": 50,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        1808,
+        80
+      ],
+      "id": "41435ce3-ca82-4d9a-8fd5-4a18999c7b23",
+      "name": "Qdrant Vector Store",
+      "credentials": {
+        "qdrantApi": {
+          "id": "RAQgsFXcm3q7pgLQ",
+          "name": "Qdrant account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "sentence-transformers/all-MiniLM-L6-v2",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsHuggingFaceInference",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        288
+      ],
+      "id": "e0801564-e7b8-4ad4-8147-0e95c5371042",
+      "name": "Embeddings HuggingFace Inference",
+      "credentials": {
+        "huggingFaceApi": {
+          "id": "tNtYEr1Suy6J70Sy",
+          "name": "Hugging Face account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Используй для конвертации валют когда клиент спрашивает цену в гривнах, лари, рублях или другой валюте\n",
+        "url": "https://open.er-api.com/v6/latest/USD",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        2096,
+        80
+      ],
+      "id": "3ce4b85c-a14b-4b75-9502-b9039c369791",
+      "name": "currency_converter"
+    },
+    {
+      "parameters": {
+        "options": {
+          "timezone": "Asia/Tbilisi"
+        }
+      },
+      "type": "n8n-nodes-base.dateTimeTool",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        80
+      ],
+      "id": "5de00340-df52-4834-9535-4a6d3ac12414",
+      "name": "Date & Time"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4f1799d8-a7f7-497d-a6f0-35f22dd728d3",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "[BOOKING]",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2656,
+        -144
+      ],
+      "id": "e64b94f5-e8dd-4e98-9d4d-f3d92ae13272",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $('AI Agent').item.json.output.replace('[BOOKING]', '').trim() }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2880,
+        -48
+      ],
+      "id": "10293022-b89b-4994-a534-22e14c00711e",
+      "name": "Send a text message",
+      "webhookId": "33a994e0-8d92-4794-b47e-c4ed7fd6c2e8",
+      "credentials": {
+        "telegramApi": {
+          "id": "9Dq21QxF2NHIKHqJ",
+          "name": "Bot Luna"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $('Code in JavaScript').item.json.output.replace('[BOOKING]', '').replace(/BOOKING_DATA:\\{.*?\\}/s, '').trim() }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3104,
+        -336
+      ],
+      "id": "f215d2b0-1c05-4e59-b77a-7755432dc651",
+      "name": "Send a text message1",
+      "webhookId": "1c7b036d-bb10-4a9a-b461-cf43904cc192",
+      "credentials": {
+        "telegramApi": {
+          "id": "9Dq21QxF2NHIKHqJ",
+          "name": "Bot Luna"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "7759409748",
+        "text": "=🔔 Новая запись!\nИмя: {{ $('Code in JavaScript').item.json.booking_name }}\nУслуга: {{ $('Code in JavaScript').item.json.booking_service }}\nВремя: {{ $('Code in JavaScript').item.json.booking_datetime }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3328,
+        -144
+      ],
+      "id": "e51326fa-0c91-4be3-bb60-facb2eff296b",
+      "name": "Send a text message2",
+      "webhookId": "2134998a-138d-484a-a1e0-5dd4d1ca88a9",
+      "credentials": {
+        "telegramApi": {
+          "id": "9Dq21QxF2NHIKHqJ",
+          "name": "Bot Luna"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = $input.first().json.output;\n\nconst match = output.match(/BOOKING_DATA:(\\{.*\\})/);\n\nif (match) {\n  const booking = JSON.parse(match[1]);\n  return [{\n    json: {\n      output: output,\n      booking_name: booking.name,\n      booking_service: booking.service,\n      booking_datetime: booking.datetime,\n      has_booking: true\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    output: output,\n    has_booking: false\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2432,
+        -144
+      ],
+      "id": "b1c9081f-d627-4988-80c2-fc09fd400584",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "evgeniytkachenko999777@gmail.com",
+          "mode": "list",
+          "cachedResultName": "evgeniytkachenko999777@gmail.com"
+        },
+        "start": "={{ $json.booking_datetime }}",
+        "end": "={{ DateTime.fromISO($json.booking_datetime).plus({hours: 1}).toISO() }}",
+        "additionalFields": {
+          "summary": "={{ $json.booking_service }} — {{ $json.booking_name }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        2880,
+        -240
+      ],
+      "id": "c45d2640-15d9-4a3b-9ebf-4889503ab072",
+      "name": "Create an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "PXe381G0Zv8VTOSb",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0f60143c-b49f-4eb1-b339-45bf860ed0c7",
+              "name": "today",
+              "value": "={{ $now.setZone('Asia/Tbilisi').toFormat('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "3681f2a9-f719-4e2a-8325-c095647973fc",
+              "name": "chatInput",
+              "value": "={{ $('Telegram Trigger').item.json.message.text || $('HTTP Request2').item.json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1328,
+        -144
+      ],
+      "id": "d89800be-4b7c-4a70-adf8-2fe8178d02f8",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1a496468-d564-4d32-baff-6771b8b81448",
+              "leftValue": "={{ $json.message.voice }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        -144
+      ],
+      "id": "4e540b86-9d9d-403f-9d62-c3db9a959805",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.telegram.org/botYOUR_TELEGRAM_BOT_TOKEN/getFile?file_id={{ $('Telegram Trigger').item.json.message.voice.file_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        432,
+        -208
+      ],
+      "id": "142c71ac-7c89-4695-b9e6-f17c477bfee5",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.telegram.org/file/botYOUR_TELEGRAM_BOT_TOKEN/{{ $json.result.file_path }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        656,
+        -208
+      ],
+      "id": "3d96b2c3-db05-4195-ae12-16b43231fa77",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "model",
+              "value": "whisper-large-v3"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1104,
+        -208
+      ],
+      "id": "6ef4ed6f-14d2-4c87-969c-06e2c466504c",
+      "name": "HTTP Request2",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "npzxp6afbYy2RMAM",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item;\nitem.binary.data.mimeType = 'audio/ogg';\nitem.binary.data.fileExtension = 'ogg';\nitem.binary.data.fileName = 'audio.ogg';\nreturn item;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -208
+      ],
+      "id": "ae305174-5fd6-43cc-ad78-8f5c10bbaa81",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR-PORTAL.bitrix24.ru/rest/1/YOUR_BITRIX_WEBHOOK_TOKEN/crm.deal.add.json",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"fields\": {\n    \"TITLE\": \"Запись: {{ $('Code in JavaScript').item.json.booking_service }} - {{ $('Code in JavaScript').item.json.booking_name }}\",\n    \"COMMENTS\": \"Время: {{ $('Code in JavaScript').item.json.booking_datetime }}. Клиент: {{ $('Code in JavaScript').item.json.booking_name }}. Услуга: {{ $('Code in JavaScript').item.json.booking_service }}.\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3104,
+        -144
+      ],
+      "id": "51aa079f-d56e-4dee-9f0a-2339f6222edb",
+      "name": "HTTP Request3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings HuggingFace Inference": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "currency_converter": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message1": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f608b183-6bc7-4a0f-a470-6d89dd66a52a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "09cae7f0d35049096be83515937f3dbc4de8b62edacdc28cdf6f9996570467c2"
+  },
+  "nodeGroups": [],
+  "id": "gCUVY5tDOip5xH4P",
+  "tags": []
+}
